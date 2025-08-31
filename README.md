@@ -34,10 +34,8 @@ Before running this application, ensure you have:
 ```sql
 CREATE DATABASE schools_db;
 
-2. Create the schools table:
-
-```sql
 USE schools_db;
+
 CREATE TABLE schools (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name TEXT NOT NULL,
