@@ -1,24 +1,8 @@
-// pages/api/upload.js
 import multer from "multer";
 import path from "path";
-import { promises as fs } from "fs";
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: async function (req, file, cb) {
-    const uploadDir = path.join(process.cwd(), "public", "schoolImages");
-    try {
-      await fs.access(uploadDir);
-    } catch (error) {
-      await fs.mkdir(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, "school-" + uniqueSuffix + path.extname(file.originalname));
-  },
-});
+// For Vercel deployment, we'll use memory storage instead of disk storage
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage: storage,
@@ -59,7 +43,14 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    const imagePath = `/schoolImages/${req.file.filename}`;
-    res.status(200).json({ imagePath });
+    // For Vercel deployment, we'll use a placeholder since we can't save files
+    // In a real application, you would upload to Cloudinary, AWS S3, etc.
+    const imagePath = "/placeholder-school.jpg";
+
+    res.status(200).json({
+      imagePath,
+      message:
+        "Image upload simulated for demo. In production, use cloud storage like Cloudinary or AWS S3.",
+    });
   });
 }
