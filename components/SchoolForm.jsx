@@ -18,14 +18,24 @@ const SchoolForm = () => {
     try {
       let imagePath = "";
 
-      // Upload image if provided
+      // Upload image to Cloudinary if provided
       if (data.image && data.image.length > 0) {
-        const formData = new FormData();
-        formData.append("image", data.image[0]);
+        const file = data.image[0];
+
+        // Convert image to base64 for Cloudinary
+        const imageData = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.onerror = (error) => reject(error);
+          reader.readAsDataURL(file);
+        });
 
         const uploadResponse = await fetch("/api/upload", {
           method: "POST",
-          body: formData,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ image: imageData }),
         });
 
         if (!uploadResponse.ok) {
@@ -168,6 +178,7 @@ const SchoolForm = () => {
             accept="image/*"
             {...register("image")}
           />
+          <p className="file-hint">Supports JPG, PNG, GIF up to 5MB</p>
         </div>
 
         <button type="submit" disabled={isSubmitting}>
@@ -252,6 +263,13 @@ const SchoolForm = () => {
           font-size: 14px;
           margin-top: 5px;
           display: block;
+        }
+
+        .file-hint {
+          font-size: 12px;
+          color: #666;
+          margin-top: 5px;
+          font-style: italic;
         }
 
         button {

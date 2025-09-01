@@ -1,26 +1,18 @@
-import multer from "multer";
-import path from "path";
+// pages/api/upload.js
+import { v2 as cloudinary } from "cloudinary";
 
-// For Vercel deployment, we'll use memory storage instead of disk storage
-const storage = multer.memoryStorage();
-
-const upload = multer({
-  storage: storage,
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only image files are allowed!"), false);
-    }
-  },
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
-  },
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 export const config = {
   api: {
-    bodyParser: false,
+    bodyParser: {
+      sizeLimit: "5mb", // Set higher limit for images
+    },
   },
 };
 
@@ -29,28 +21,25 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  upload.single("image")(req, res, function (err) {
-    if (err instanceof multer.MulterError) {
-      if (err.code === "LIMIT_FILE_SIZE") {
-        return res.status(400).json({ error: "File too large (max 5MB)" });
-      }
-      return res.status(400).json({ error: err.message });
-    } else if (err) {
-      return res.status(400).json({ error: err.message });
+  try {
+    const { image } = req.body;
+
+    if (!image) {
+      return res.status(400).json({ error: "No image data provided" });
     }
 
-    if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
-    }
-
-    // For Vercel deployment, we'll use a placeholder since we can't save files
-    // In a real application, you would upload to Cloudinary, AWS S3, etc.
-    const imagePath = "/placeholder-school.jpg";
-
-    res.status(200).json({
-      imagePath,
-      message:
-        "Image upload simulated for demo. In production, use cloud storage like Cloudinary or AWS S3.",
+    // Upload image to Cloudinary
+    const uploadResult = await cloudinary.uploader.upload(image, {
+      folder: "school-images", // Optional folder organization
     });
-  });
+
+    // Return the secure URL of the uploaded image
+    res.status(200).json({
+      imagePath: uploadResult.secure_url,
+      message: "Image uploaded successfully to Cloudinary",
+    });
+  } catch (error) {
+    console.error("Upload error:", error);
+    res.status(500).json({ error: "Failed to upload image: " + error.message });
+  }
 }
